@@ -1,16 +1,18 @@
 {
   "expo": {
-    "name": "demoApp",
-    "slug": "demoApp",
+    "name": "MashfyAI",
+    "slug": "mashfyai",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "demoapp",
+    "scheme": "mashfyai",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.mashfyai.chat"
     },
     "android": {
+      "package": "com.mashfyai.chat",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -34,7 +36,14 @@
         }
       ],
       "expo-secure-store",
-      "expo-audio"
+      "expo-audio",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "MashfyAI opens your photos so you can send one to the AI.",
+          "cameraPermission": "MashfyAI uses the camera so you can take a photo to send to the AI."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

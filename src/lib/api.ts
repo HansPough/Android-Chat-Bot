@@ -1,4 +1,4 @@
-export const BACKEND_URL = 'https://saddled-manicure-trimming.ngrok-free.dev';
+export const BACKEND_URL = 'https://tingle-bunkmate-profanity.ngrok-free.dev';
 
 const REQUEST_TIMEOUT_MS = 30000;
 

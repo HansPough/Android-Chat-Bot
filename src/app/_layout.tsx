@@ -1,3 +1,4 @@
+import { aiHealth } from '@/lib/ai';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
@@ -20,6 +21,14 @@ function RootNavigator() {
       router.replace('/(tabs)/chat');
     }
   }, [token, loading, segments]);
+
+  // Proves the app can reach the hosted AI API with its own key (see lib/ai.ts).
+  // Logged only: this must never block the first screen.
+  useEffect(() => {
+    aiHealth()
+      .then((r) => console.log('[ai] direct API reachable — model:', r.model))
+      .catch((e: Error) => console.log('[ai] direct API unreachable:', e.message));
+  }, []);
 
   return (
     <Stack screenOptions={{ headerShown: false }}>

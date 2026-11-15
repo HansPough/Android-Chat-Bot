@@ -21,6 +21,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
+import { aiChat } from '@/lib/ai';
 import { BACKEND_URL, apiFetch } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { AudioModule, RecordingPresets, setAudioModeAsync, useAudioRecorder } from 'expo-audio';
@@ -139,7 +140,7 @@ const MessageBubble = memo(
 );
 
 export default function ChatScreen() {
-  const { token, signOut } = useAuth();
+  const { token, user, signOut } = useAuth();
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
 
@@ -176,6 +177,7 @@ export default function ChatScreen() {
   const xhrRef = useRef<XMLHttpRequest | null>(null);
   const streamIdRef = useRef(0); // bumped to invalidate an in-flight stream
   const loadSeqRef = useRef(0); // guards against out-of-order message loads
+  const loadedForUserRef = useRef<number | null>(null); // which user the initial load ran for
 
   // Async callbacks (like voice input) run long after the render that created them.
   // These refs always hold the LATEST values so those callbacks never use stale ones.
@@ -319,9 +321,13 @@ export default function ChatScreen() {
   );
 
   // ---- Initial load: conversation list, then the newest conversation's messages ----
+  // Keyed on the user id rather than the token: changing your password or email mints a
+  // new token, and that must not throw you out of the conversation you are reading.
   useEffect(() => {
+    const userId = user?.id ?? null;
+    if (!token || userId === null || loadedForUserRef.current === userId) return;
+    loadedForUserRef.current = userId;
     (async () => {
-      if (!token) return;
       try {
         let list = await apiFetch('/api/conversations', {}, token);
 
@@ -347,7 +353,7 @@ export default function ChatScreen() {
         console.warn('Failed to load conversation:', e.message);
       }
     })();
-  }, [token]);
+  }, [token, user?.id]);
 
   async function openConversation(id: number) {
     if (!token) return;
@@ -516,6 +522,9 @@ export default function ChatScreen() {
       return;
     }
 
+    // Snapshot of the messages before this one, for the direct-AI fallback below.
+    const priorMessages = messages;
+
     // Add the user's message and an empty assistant bubble that the stream will fill in.
     const stamp = Date.now();
     const assistantId = `${stamp}-a`;
@@ -618,7 +627,42 @@ export default function ChatScreen() {
       processProgress();
     };
 
-    xhr.onerror = () => showError("Couldn't reach the server (network error)");
+    // The backend (or its tunnel) is unreachable: answer straight from the hosted AI API
+    // with the app's own key instead of only reporting a network error. Text only — a
+    // photo needs the OpenAI image-part request shape, which the backend builds for us.
+    const tryDirectAi = async () => {
+      if (isStale()) return;
+      if (img) {
+        showError("Couldn't reach the server (network error)");
+        return;
+      }
+      const history = [
+        ...priorMessages
+          .filter((m) => m.content.length > 0)
+          .map((m) => ({ role: m.role, content: m.content })),
+        { role: 'user' as const, content: text },
+      ].slice(-10);
+      try {
+        const reply = await aiChat(history);
+        if (isStale()) return;
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId
+              ? {
+                  ...m,
+                  content: `${reply}\n\n[answered by the AI API directly — not saved to your history]`,
+                }
+              : m,
+          ),
+        );
+      } catch (e: any) {
+        showError(e.message);
+      }
+    };
+
+    xhr.onerror = () => {
+      void tryDirectAi();
+    };
     xhr.ontimeout = () => showError('The request timed out');
 
     // Runs after success, error, timeout or abort.
@@ -752,7 +796,7 @@ export default function ChatScreen() {
             <TextInput
               value={input}
               onChangeText={setInput}
-              placeholder={webSearch ? 'Message Qwen (web search on)' : 'Message Qwen'}
+              placeholder={webSearch ? 'Message MashfyAI (web search on)' : 'Message MashfyAI'}
               placeholderTextColor="#888"
               style={[styles.input, { color: colors.text }]}
               multiline
