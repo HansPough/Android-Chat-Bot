@@ -1,4 +1,8 @@
-export const BACKEND_URL = 'https://tingle-bunkmate-profanity.ngrok-free.dev';
+// Override in .env.local when your LAN IP changes or when you switch to an ngrok tunnel,
+// e.g. EXPO_PUBLIC_BACKEND_URL=http://192.168.254.112:3000
+export const BACKEND_URL = (
+  process.env.EXPO_PUBLIC_BACKEND_URL ?? 'https://tingle-bunkmate-profanity.ngrok-free.dev'
+).replace(/\/+$/, '');
 
 const REQUEST_TIMEOUT_MS = 30000;
 

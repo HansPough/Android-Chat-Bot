@@ -43,7 +43,8 @@
           "photosPermission": "MashfyAI opens your photos so you can send one to the AI.",
           "cameraPermission": "MashfyAI uses the camera so you can take a photo to send to the AI."
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,

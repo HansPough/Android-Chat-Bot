@@ -17,17 +17,20 @@
  */
 
 // Where the AI service is reachable — this is the AI service (port 3001), NOT the port
-// 3000 backend that api.ts uses. Point it at whichever address your phone can reach:
+// 3000 backend that api.ts uses. Set EXPO_PUBLIC_AI_URL in .env.local to whichever address
+// your phone can reach:
 //
-//   same WiFi as this PC (no second tunnel needed, start: node ai-service.js)
-//     http://192.168.254.109:3001/v1
+//   same WiFi as this PC (no tunnel needed, start: node ai-service.js)
+//     http://192.168.254.112:3001/v1
 //
-//   from anywhere (start: ngrok http 3001, then paste its https URL here)
+//   from anywhere (start: ngrok http 3001, then use its https URL)
 //     https://<something>.ngrok-free.dev/v1
 //
 // A wrong value does not break the app: chat still goes through the backend, and the
 // direct path simply reports that it is unreachable.
-export const AI_API_BASE_URL = 'http://192.168.254.109:3001/v1';
+export const AI_API_BASE_URL = (
+  process.env.EXPO_PUBLIC_AI_URL ?? 'http://192.168.254.112:3001/v1'
+).replace(/\/+$/, '');
 
 // The key the AI service expects in "Authorization: Bearer ...". Same value as AI_API_KEY
 // in the backend's .env — ai-service.js refuses requests that don't send it.

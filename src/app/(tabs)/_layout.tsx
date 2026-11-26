@@ -6,7 +6,7 @@ import { useColorScheme } from 'react-native';
 export default function AppTabs() {
   const scheme = useColorScheme();
   // Fall back to the light theme if the system doesn't report a scheme
-  const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
+  const colors = Colors[scheme ?? 'light'];
 
   return (
     <NativeTabs
